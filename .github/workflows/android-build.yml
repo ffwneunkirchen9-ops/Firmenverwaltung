@@ -28,6 +28,44 @@ jobs:
           mkdir -p android-project
           unzip -q FA_Fertigung_Projekt_HYBRID_KI.zip -d android-project
 
+      - name: Kotlin 2.3 JVM-Ziel korrigieren
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("android-project/app/build.gradle.kts")
+          text = p.read_text(encoding="utf-8")
+
+          if "org.jetbrains.kotlin.gradle.dsl.JvmTarget" not in text:
+              text = 'import org.jetbrains.kotlin.gradle.dsl.JvmTarget\n\n' + text
+
+          text = re.sub(
+              r'\n\s*kotlinOptions\s*\{\s*jvmTarget\s*=\s*"17"\s*\}\s*\n',
+              '\n',
+              text,
+              flags=re.S
+          )
+
+          if "compilerOptions" not in text:
+              text = text.replace(
+                  "\n\ndependencies {",
+                  """
+
+          kotlin {
+              compilerOptions {
+                  jvmTarget.set(JvmTarget.JVM_17)
+              }
+          }
+
+          dependencies {""",
+                  1
+              )
+
+          p.write_text(text, encoding="utf-8")
+          print(p.read_text(encoding="utf-8"))
+          PY
+
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
         with:
