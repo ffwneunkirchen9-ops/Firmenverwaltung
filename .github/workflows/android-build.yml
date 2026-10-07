@@ -28,14 +28,15 @@ jobs:
           mkdir -p android-project
           unzip -q FA_Fertigung_Projekt_HYBRID_KI.zip -d android-project
 
-      - name: Kotlin 2.3 JVM-Ziel korrigieren
+      - name: Projekt fuer aktuelle Kotlin/Android-Version korrigieren
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          p = Path("android-project/app/build.gradle.kts")
-          text = p.read_text(encoding="utf-8")
+          # Kotlin 2.3: neue compilerOptions-DSL
+          gradle = Path("android-project/app/build.gradle.kts")
+          text = gradle.read_text(encoding="utf-8")
 
           if "org.jetbrains.kotlin.gradle.dsl.JvmTarget" not in text:
               text = 'import org.jetbrains.kotlin.gradle.dsl.JvmTarget\n\n' + text
@@ -62,8 +63,40 @@ jobs:
                   1
               )
 
-          p.write_text(text, encoding="utf-8")
-          print(p.read_text(encoding="utf-8"))
+          gradle.write_text(text, encoding="utf-8")
+
+          # WebView besitzt in dieser Android/Kotlin-Kombination
+          # keine auflösbare Property "isDestroyed".
+          bridge = Path(
+              "android-project/app/src/main/java/de/fa/fertigung/ai/LocalAiBridge.kt"
+          )
+          text = bridge.read_text(encoding="utf-8")
+
+          text = text.replace(
+              """    private fun evaluate(script: String) {
+                  webView.post {
+                      if (!webView.isDestroyed) {
+                          webView.evaluateJavascript(script, null)
+                      }
+                  }
+              }""",
+              """    private fun evaluate(script: String) {
+                  webView.post {
+                      runCatching {
+                          webView.evaluateJavascript(script, null)
+                      }
+                  }
+              }"""
+          )
+
+          bridge.write_text(text, encoding="utf-8")
+
+          print("---- app/build.gradle.kts ----")
+          print(gradle.read_text(encoding="utf-8"))
+          print("---- LocalAiBridge evaluate() ----")
+          b = bridge.read_text(encoding="utf-8")
+          start = b.find("private fun evaluate")
+          print(b[start:start+220])
           PY
 
       - name: Android SDK einrichten
