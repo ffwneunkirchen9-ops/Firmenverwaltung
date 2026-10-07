@@ -28,13 +28,13 @@ jobs:
           mkdir -p android-project
           unzip -q FA_Fertigung_Projekt_HYBRID_KI.zip -d android-project
 
-      - name: Projekt fuer aktuelle Kotlin/Android-Version korrigieren
+      - name: Projekt korrigieren
         run: |
           python3 - <<'PY'
           from pathlib import Path
           import re
 
-          # Kotlin 2.3: neue compilerOptions-DSL
+          # Kotlin 2.3 JVM-DSL
           gradle = Path("android-project/app/build.gradle.kts")
           text = gradle.read_text(encoding="utf-8")
 
@@ -65,8 +65,7 @@ jobs:
 
           gradle.write_text(text, encoding="utf-8")
 
-          # WebView besitzt in dieser Android/Kotlin-Kombination
-          # keine auflösbare Property "isDestroyed".
+          # LocalAiBridge-Kompatibilität
           bridge = Path(
               "android-project/app/src/main/java/de/fa/fertigung/ai/LocalAiBridge.kt"
           )
@@ -91,12 +90,111 @@ jobs:
 
           bridge.write_text(text, encoding="utf-8")
 
-          print("---- app/build.gradle.kts ----")
-          print(gradle.read_text(encoding="utf-8"))
-          print("---- LocalAiBridge evaluate() ----")
-          b = bridge.read_text(encoding="utf-8")
-          start = b.find("private fun evaluate")
-          print(b[start:start+220])
+          # Android-/Samsung-Leiste automatisch ausblenden
+          main = Path(
+              "android-project/app/src/main/java/de/fa/fertigung/MainActivity.kt"
+          )
+          text = main.read_text(encoding="utf-8")
+
+          if "import android.os.Build" not in text:
+              text = text.replace(
+                  "import android.os.Bundle\n",
+                  "import android.os.Bundle\nimport android.os.Build\n"
+              )
+
+          if "import android.view.WindowInsets" not in text:
+              text = text.replace(
+                  "import android.provider.MediaStore\n",
+                  "import android.provider.MediaStore\n"
+                  "import android.view.View\n"
+                  "import android.view.WindowInsets\n"
+                  "import android.view.WindowInsetsController\n"
+              )
+
+          if "private fun hideNavigationBar()" not in text:
+              text = text.replace(
+                  """        webView.loadUrl(
+                      WEB_APP_URL
+                  )
+              }""",
+                  """        webView.loadUrl(
+                      WEB_APP_URL
+                  )
+
+                  hideNavigationBar()
+              }"""
+              )
+
+              text = text.replace(
+                  """    private fun createCameraIntent(): Pair<Intent, Uri>? {""",
+                  """    private fun hideNavigationBar() {
+
+                  if (
+                      Build.VERSION.SDK_INT >=
+                      Build.VERSION_CODES.R
+                  ) {
+
+                      window.insetsController?.let {
+                          controller ->
+
+                          controller.hide(
+                              WindowInsets.Type.navigationBars()
+                          )
+
+                          controller.systemBarsBehavior =
+                              WindowInsetsController
+                                  .BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                      }
+
+                  } else {
+
+                      @Suppress("DEPRECATION")
+                      window.decorView.systemUiVisibility =
+                          View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                          View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+
+                  }
+              }
+
+
+              override fun onResume() {
+                  super.onResume()
+
+                  webView.postDelayed(
+                      {
+                          hideNavigationBar()
+                      },
+                      250
+                  )
+              }
+
+
+              override fun onWindowFocusChanged(
+                  hasFocus: Boolean
+              ) {
+                  super.onWindowFocusChanged(
+                      hasFocus
+                  )
+
+                  if (hasFocus) {
+
+                      webView.postDelayed(
+                          {
+                              hideNavigationBar()
+                          },
+                          150
+                      )
+
+                  }
+              }
+
+
+              private fun createCameraIntent(): Pair<Intent, Uri>? {"""
+              )
+
+          main.write_text(text, encoding="utf-8")
           PY
 
       - name: Android SDK einrichten
