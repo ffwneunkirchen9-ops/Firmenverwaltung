@@ -1,4 +1,4 @@
-name: FA Fertigung FIX12 Komplett
+name: FA Fertigung FIX15 Einrichteplan Archiv
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX12_KOMPLETT.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX15_EINRICHTEPLAN_ARCHIV.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
@@ -45,11 +45,11 @@ jobs:
       - name: APK umbenennen
         run: |
           mkdir -p release
-          cp android-project/app/build/outputs/apk/debug/app-debug.apk release/FA-Fertigung-FIX12-Komplett.apk
+          cp android-project/app/build/outputs/apk/debug/app-debug.apk release/FA-Fertigung-FIX15.apk
 
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX12-Komplett
-          path: release/FA-Fertigung-FIX12-Komplett.apk
+          name: FA-Fertigung-FIX15
+          path: release/FA-Fertigung-FIX15.apk
           retention-days: 90
