@@ -1,4 +1,4 @@
-name: FA Fertigung FIX25 signiert 2 Seiten
+name: FA Fertigung FIX27 Phone + Watch
 
 on:
   workflow_dispatch:
@@ -26,12 +26,12 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX25_SIGNIERT_2_SEITEN.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX27_WEAR_OS.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
         with:
-          packages: "platform-tools platforms;android-35 build-tools;35.0.0"
+          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
@@ -46,7 +46,7 @@ jobs:
           test -n "$FA_KEYSTORE_BASE64" || { echo "FA_KEYSTORE_BASE64 fehlt"; exit 1; }
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
 
-      - name: Release APK bauen
+      - name: Phone und Watch Release APK bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -54,16 +54,25 @@ jobs:
           FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: gradle --no-daemon :app:assembleRelease --stacktrace
+        run: |
+          gradle --no-daemon :app:assembleRelease :wear:assembleRelease --stacktrace
 
-      - name: APK umbenennen
+      - name: APKs umbenennen
         run: |
           mkdir -p release
-          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX25-SIGNED.apk
+          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX27-PHONE.apk
+          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX27-WATCH.apk
 
-      - name: APK bereitstellen
+      - name: Phone APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX25-SIGNED
-          path: release/FA-Fertigung-FIX25-SIGNED.apk
+          name: FA-Fertigung-FIX27-PHONE
+          path: release/FA-Fertigung-FIX27-PHONE.apk
+          retention-days: 90
+
+      - name: Watch APK bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: FA-Fertigung-FIX27-WATCH
+          path: release/FA-Fertigung-FIX27-WATCH.apk
           retention-days: 90
