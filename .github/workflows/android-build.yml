@@ -1,4 +1,4 @@
-name: FA Fertigung FIX21B Build repariert
+name: FA Fertigung FIX25 signiert 2 Seiten
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX21B_BUILD_REPARIERT.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX25_SIGNIERT_2_SEITEN.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
@@ -38,18 +38,32 @@ jobs:
         with:
           gradle-version: "8.13"
 
-      - name: APK bauen
+      - name: Signierschlüssel bereitstellen
+        shell: bash
+        env:
+          FA_KEYSTORE_BASE64: ${{ secrets.FA_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$FA_KEYSTORE_BASE64" || { echo "FA_KEYSTORE_BASE64 fehlt"; exit 1; }
+          printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
+
+      - name: Release APK bauen
         working-directory: android-project
-        run: gradle --no-daemon :app:assembleDebug --stacktrace
+        env:
+          FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
+          FA_KEYSTORE_PASSWORD: ${{ secrets.FA_KEYSTORE_PASSWORD }}
+          FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
+          FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: gradle --no-daemon :app:assembleRelease --stacktrace
 
       - name: APK umbenennen
         run: |
           mkdir -p release
-          cp android-project/app/build/outputs/apk/debug/app-debug.apk release/FA-Fertigung-FIX21B.apk
+          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX25-SIGNED.apk
 
       - name: APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX21B
-          path: release/FA-Fertigung-FIX21B.apk
+          name: FA-Fertigung-FIX25-SIGNED
+          path: release/FA-Fertigung-FIX25-SIGNED.apk
           retention-days: 90
