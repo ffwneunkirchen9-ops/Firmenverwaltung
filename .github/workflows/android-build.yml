@@ -1,4 +1,4 @@
-name: FA Fertigung FIX28 Phone + Watch
+name: FA Fertigung FIX29 Phone + Watch
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX28_WEAR_PLUS_MINUS_RELIABLE.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX29_WEAR_DUAL_CHANNEL.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
@@ -60,19 +60,19 @@ jobs:
       - name: APKs umbenennen
         run: |
           mkdir -p release
-          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX28-PHONE.apk
-          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX28-WATCH.apk
+          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX29-PHONE.apk
+          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX29-WATCH.apk
 
       - name: Phone APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX28-PHONE
-          path: release/FA-Fertigung-FIX28-PHONE.apk
+          name: FA-Fertigung-FIX29-PHONE
+          path: release/FA-Fertigung-FIX29-PHONE.apk
           retention-days: 90
 
       - name: Watch APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX28-WATCH
-          path: release/FA-Fertigung-FIX28-WATCH.apk
+          name: FA-Fertigung-FIX29-WATCH
+          path: release/FA-Fertigung-FIX29-WATCH.apk
           retention-days: 90
