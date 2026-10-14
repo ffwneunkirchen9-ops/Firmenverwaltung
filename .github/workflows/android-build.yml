@@ -1,4 +1,4 @@
-name: FA Fertigung FIX34 Phone + Watch
+name: FA Fertigung FIX36 Watch
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-watch:
     runs-on: ubuntu-latest
 
     steps:
@@ -26,7 +26,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX34_TIMER_SICHTBAR.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX36_TAGESMENGE.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
@@ -46,7 +46,7 @@ jobs:
           test -n "$FA_KEYSTORE_BASE64" || { echo "FA_KEYSTORE_BASE64 fehlt"; exit 1; }
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
 
-      - name: Phone und Watch Release APK bauen
+      - name: Watch Release APK bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -55,24 +55,16 @@ jobs:
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
         run: |
-          gradle --no-daemon :app:assembleRelease :wear:assembleRelease --stacktrace
+          gradle --no-daemon :wear:assembleRelease --stacktrace
 
-      - name: APKs umbenennen
+      - name: Watch APK umbenennen
         run: |
           mkdir -p release
-          cp android-project/app/build/outputs/apk/release/app-release.apk release/FA-Fertigung-FIX34-PHONE.apk
-          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX34-WATCH.apk
-
-      - name: Phone APK bereitstellen
-        uses: actions/upload-artifact@v4
-        with:
-          name: FA-Fertigung-FIX34-PHONE
-          path: release/FA-Fertigung-FIX34-PHONE.apk
-          retention-days: 90
+          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX36-WATCH.apk
 
       - name: Watch APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX34-WATCH
-          path: release/FA-Fertigung-FIX34-WATCH.apk
+          name: FA-Fertigung-FIX36-WATCH
+          path: release/FA-Fertigung-FIX36-WATCH.apk
           retention-days: 90
