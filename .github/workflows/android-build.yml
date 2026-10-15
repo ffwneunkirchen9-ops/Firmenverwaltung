@@ -1,4 +1,4 @@
-name: FA Fertigung FIX37 Watch
+name: FA Fertigung FIX38 Watch
 
 on:
   workflow_dispatch:
@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Repository laden
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Java 17 einrichten
-        uses: actions/setup-java@v6
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
@@ -26,12 +26,10 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX37_GROSSES_LAYOUT.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX38_LAYOUT_BILD.zip -d android-project
 
       - name: Android SDK einrichten
-        uses: android-actions/setup-android@v4
-        with:
-          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+        uses: android-actions/setup-android@v3
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
@@ -60,11 +58,11 @@ jobs:
       - name: Watch APK umbenennen
         run: |
           mkdir -p release
-          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX37-WATCH.apk
+          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX38-WATCH.apk
 
       - name: Watch APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX37-WATCH
-          path: release/FA-Fertigung-FIX37-WATCH.apk
+          name: FA-Fertigung-FIX38-WATCH
+          path: release/FA-Fertigung-FIX38-WATCH.apk
           retention-days: 90
