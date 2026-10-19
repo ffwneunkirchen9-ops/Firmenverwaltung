@@ -1,4 +1,4 @@
-name: FA Fertigung FIX46 Watch
+name: FA Fertigung FIX47 Watch
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ jobs:
         run: |
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX46_SAMMELFIX.zip -d android-project
+          unzip -q FA_Fertigung_Projekt_FIX47_TAGESWERT_SYNC.zip -d android-project
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
@@ -60,11 +60,11 @@ jobs:
       - name: Watch APK umbenennen
         run: |
           mkdir -p release
-          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX46-WATCH.apk
+          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX47-WATCH.apk
 
       - name: Watch APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX46-WATCH
-          path: release/FA-Fertigung-FIX46-WATCH.apk
+          name: FA-Fertigung-FIX47-WATCH
+          path: release/FA-Fertigung-FIX47-WATCH.apk
           retention-days: 90
