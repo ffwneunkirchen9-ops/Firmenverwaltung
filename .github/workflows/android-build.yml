@@ -23,10 +23,26 @@ jobs:
           java-version: "17"
 
       - name: Projekt entpacken
+        shell: bash
         run: |
+          set -euo pipefail
+
+          # Auch die beim mehrfachen Herunterladen entstandenen Varianten
+          # wie "...(2).zip" und "...(3).zip" werden gefunden.
+          PROJECT_ZIP="$(find . -maxdepth 1 -type f -name 'FA_Fertigung_Projekt_FIX49_HEUTE_TAGESWECHSEL*.zip' -print | sort -V | tail -n 1)"
+
+          if [[ -z "$PROJECT_ZIP" ]]; then
+            echo "FEHLER: Keine FIX49-Projekt-ZIP im GitHub-Hauptverzeichnis gefunden."
+            echo "Vorhandene ZIP-Dateien:"
+            find . -maxdepth 1 -type f -name '*.zip' -print || true
+            exit 1
+          fi
+
+          echo "Verwende Projektdatei: $PROJECT_ZIP"
           rm -rf android-project
           mkdir -p android-project
-          unzip -q FA_Fertigung_Projekt_FIX49_HEUTE_TAGESWECHSEL.zip -d android-project
+          unzip -q "$PROJECT_ZIP" -d android-project
+          test -f android-project/settings.gradle.kts || { echo "Ungültige Projekt-ZIP: settings.gradle.kts fehlt."; exit 1; }
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
