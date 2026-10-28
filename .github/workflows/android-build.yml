@@ -1,4 +1,4 @@
-name: FA Fertigung FIX49 Watch
+name: FA Fertigung FIX50.3 Handy
 
 on:
   workflow_dispatch:
@@ -9,9 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  build-watch:
+  build-phone:
     runs-on: ubuntu-latest
-
     steps:
       - name: Repository laden
         uses: actions/checkout@v4
@@ -20,49 +19,43 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
-      - name: Projekt entpacken
+      - name: FIX50.3-Projekt entpacken
         shell: bash
         run: |
           set -euo pipefail
-
-          # Auch die beim mehrfachen Herunterladen entstandenen Varianten
-          # wie "...(2).zip" und "...(3).zip" werden gefunden.
-          PROJECT_ZIP="$(find . -maxdepth 1 -type f -name 'FA_Fertigung_Projekt_FIX49_HEUTE_TAGESWECHSEL*.zip' -print | sort -V | tail -n 1)"
-
-          if [[ -z "$PROJECT_ZIP" ]]; then
-            echo "FEHLER: Keine FIX49-Projekt-ZIP im GitHub-Hauptverzeichnis gefunden."
-            echo "Vorhandene ZIP-Dateien:"
-            find . -maxdepth 1 -type f -name '*.zip' -print || true
+          PROJECT_ZIP='FA_Fertigung_Android_FIX50_3_Einrichteplaene_Rettung.zip'
+          if [[ ! -f "$PROJECT_ZIP" ]]; then
+            echo "FEHLER: $PROJECT_ZIP fehlt im GitHub-Hauptverzeichnis."
             exit 1
           fi
-
           echo "Verwende Projektdatei: $PROJECT_ZIP"
-          rm -rf android-project
           mkdir -p android-project
           unzip -q "$PROJECT_ZIP" -d android-project
-          test -f android-project/settings.gradle.kts || { echo "Ungültige Projekt-ZIP: settings.gradle.kts fehlt."; exit 1; }
+          test -f android-project/settings.gradle.kts
+          test -f android-project/app/build.gradle.kts
 
       - name: Android SDK einrichten
         uses: android-actions/setup-android@v4
         with:
-          packages: "platform-tools platforms;android-36 build-tools;36.0.0"
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - name: Gradle einrichten
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.13"
+          gradle-version: '8.13'
 
-      - name: Signierschlüssel bereitstellen
+      - name: Vorhandenen Signierschlüssel bereitstellen
         shell: bash
         env:
           FA_KEYSTORE_BASE64: ${{ secrets.FA_KEYSTORE_BASE64 }}
         run: |
-          test -n "$FA_KEYSTORE_BASE64" || { echo "FA_KEYSTORE_BASE64 fehlt"; exit 1; }
+          set -euo pipefail
+          test -n "$FA_KEYSTORE_BASE64" || { echo 'FA_KEYSTORE_BASE64 fehlt'; exit 1; }
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
 
-      - name: Watch Release APK bauen
+      - name: Handy Release APK bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -70,17 +63,11 @@ jobs:
           FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: |
-          gradle --no-daemon :wear:assembleRelease --stacktrace
+        run: gradle --no-daemon :app:assembleRelease --stacktrace
 
-      - name: Watch APK umbenennen
-        run: |
-          mkdir -p release
-          cp android-project/wear/build/outputs/apk/release/wear-release.apk release/FA-Fertigung-FIX49-WATCH.apk
-
-      - name: Watch APK bereitstellen
+      - name: Handy APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX49-WATCH
-          path: release/FA-Fertigung-FIX49-WATCH.apk
+          name: FA-Fertigung-FIX50-3-HANDY
+          path: android-project/app/build/outputs/apk/release/app-release.apk
           retention-days: 90
