@@ -1,4 +1,4 @@
-name: FA Fertigung FIX52.1 Arbeitszeit (Handy + Uhr)
+name: FA Fertigung FIX52.2 Raucherpause Countdown (nur Uhr)
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  build-phone-watch:
+  build-watch:
     runs-on: ubuntu-latest
     steps:
       - name: Repository laden
@@ -21,11 +21,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: FIX52-Projekt entpacken
+      - name: FIX52.2-Projekt entpacken
         shell: bash
         run: |
           set -euo pipefail
-          PROJECT_ZIP='FA_Fertigung_Android_FIX52_1_Buildfix_Uhr.zip'
+          PROJECT_ZIP='FA_Fertigung_Android_FIX52_2_Raucherpause_Countdown_UHR.zip'
           if [[ ! -f "$PROJECT_ZIP" ]]; then
             echo "FEHLER: $PROJECT_ZIP fehlt im GitHub-Hauptverzeichnis"
             exit 1
@@ -55,7 +55,7 @@ jobs:
           test -n "$FA_KEYSTORE_BASE64" || { echo 'FA_KEYSTORE_BASE64 fehlt'; exit 1; }
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
 
-      - name: Handy und Uhr signiert bauen
+      - name: Galaxy Watch signiert bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -63,18 +63,12 @@ jobs:
           FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: gradle --no-daemon :app:assembleRelease :wear:assembleRelease --stacktrace
+        run: gradle --no-daemon :wear:assembleRelease --stacktrace
 
-      - name: Handy APK bereitstellen
-        uses: actions/upload-artifact@v4
-        with:
-          name: FA-Fertigung-FIX52-1-HANDY
-          path: android-project/app/build/outputs/apk/release/app-release.apk
-          retention-days: 90
 
       - name: Galaxy Watch APK bereitstellen
         uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX52-1-UHR
+          name: FA-Fertigung-FIX52-2-UHR
           path: android-project/wear/build/outputs/apk/release/wear-release.apk
           retention-days: 90
