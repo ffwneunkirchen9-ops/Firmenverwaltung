@@ -1,61 +1,33 @@
-name: FA Fertigung FIX52.2 Raucherpause Countdown (nur Uhr)
-
+name: FA Fertigung FIX52.3 Handy und Uhr
 on:
   workflow_dispatch:
   push:
     branches: [main, master]
-
 permissions:
   contents: read
-
 jobs:
-  build-watch:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Repository laden
-        uses: actions/checkout@v4
-
-      - name: Java 17 einrichten
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: FIX52.2-Projekt entpacken
-        shell: bash
-        run: |
-          set -euo pipefail
-          PROJECT_ZIP='FA_Fertigung_Android_FIX52_2_Raucherpause_Countdown_UHR.zip'
-          if [[ ! -f "$PROJECT_ZIP" ]]; then
-            echo "FEHLER: $PROJECT_ZIP fehlt im GitHub-Hauptverzeichnis"
-            exit 1
-          fi
-          mkdir -p android-project
-          unzip -q "$PROJECT_ZIP" -d android-project
-          test -f android-project/settings.gradle.kts
-          test -f android-project/app/build.gradle.kts
-          test -f android-project/wear/build.gradle.kts
-
-      - name: Android SDK einrichten
-        uses: android-actions/setup-android@v4
+      - run: unzip -q FA_Fertigung_Android_FIX52_3_Raucherpause.zip -d android-project
+      - uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
-
-      - name: Gradle 8.13 einrichten
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
-      - name: Vorhandenen Signierschlüssel bereitstellen
-        shell: bash
+      - name: Signierschlüssel
         env:
           FA_KEYSTORE_BASE64: ${{ secrets.FA_KEYSTORE_BASE64 }}
         run: |
-          set -euo pipefail
-          test -n "$FA_KEYSTORE_BASE64" || { echo 'FA_KEYSTORE_BASE64 fehlt'; exit 1; }
+          test -n "$FA_KEYSTORE_BASE64"
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
-
-      - name: Galaxy Watch signiert bauen
+      - name: APKs bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -63,12 +35,12 @@ jobs:
           FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: gradle --no-daemon :wear:assembleRelease --stacktrace
-
-
-      - name: Galaxy Watch APK bereitstellen
-        uses: actions/upload-artifact@v4
+        run: gradle --no-daemon :app:assembleRelease :wear:assembleRelease --stacktrace
+      - uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX52-2-UHR
+          name: FA-Fertigung-FIX52-3-HANDY
+          path: android-project/app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FA-Fertigung-FIX52-3-UHR
           path: android-project/wear/build/outputs/apk/release/wear-release.apk
-          retention-days: 90
