@@ -1,4 +1,4 @@
-name: FA Fertigung FIX52.9 Uhr
+name: FA Fertigung FIX52.10 Uhr
 on:
   workflow_dispatch:
   push:
@@ -14,7 +14,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: unzip -q FA_Fertigung_Android_FIX52_9_Stundenkonto.zip -d android-project
+      - run: unzip -q FA_Fertigung_Android_FIX52_10_Stundenkonto.zip -d android-project
       - uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
@@ -38,5 +38,5 @@ jobs:
         run: gradle --no-daemon :wear:assembleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX52-9-UHR
+          name: FA-Fertigung-FIX52-10-UHR
           path: android-project/wear/build/outputs/apk/release/wear-release.apk
