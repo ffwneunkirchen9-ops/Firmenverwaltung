@@ -1,4 +1,4 @@
-name: FA Fertigung FIX52.3 Handy und Uhr
+name: FA Fertigung FIX52.9 Uhr
 on:
   workflow_dispatch:
   push:
@@ -14,7 +14,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - run: unzip -q FA_Fertigung_Android_FIX52_3_Raucherpause.zip -d android-project
+      - run: unzip -q FA_Fertigung_Android_FIX52_9_Stundenkonto.zip -d android-project
       - uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
@@ -27,7 +27,7 @@ jobs:
         run: |
           test -n "$FA_KEYSTORE_BASE64"
           printf '%s' "$FA_KEYSTORE_BASE64" | base64 --decode > android-project/fa-fertigung-release.jks
-      - name: APKs bauen
+      - name: Watch-APK bauen
         working-directory: android-project
         env:
           FA_KEYSTORE_PATH: ${{ github.workspace }}/android-project/fa-fertigung-release.jks
@@ -35,12 +35,8 @@ jobs:
           FA_KEY_ALIAS: ${{ secrets.FA_KEY_ALIAS }}
           FA_KEY_PASSWORD: ${{ secrets.FA_KEY_PASSWORD }}
           GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        run: gradle --no-daemon :app:assembleRelease :wear:assembleRelease --stacktrace
+        run: gradle --no-daemon :wear:assembleRelease --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: FA-Fertigung-FIX52-3-HANDY
-          path: android-project/app/build/outputs/apk/release/app-release.apk
-      - uses: actions/upload-artifact@v4
-        with:
-          name: FA-Fertigung-FIX52-3-UHR
+          name: FA-Fertigung-FIX52-9-UHR
           path: android-project/wear/build/outputs/apk/release/wear-release.apk
